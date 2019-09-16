@@ -1,2 +1,3 @@
 # ProofOfLocation_Hashgraph
-This is the OA Submission regarding Proof of Location on the Hashgraph
+
+Armada Proof of Location Module, made available on Hedera Hashgraph Open Access. Built to encourage development and understanding of using smart contracts and Hedera Hashgraph.
