@@ -1,0 +1,147 @@
+<!-- Proof of location-->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title>Proof of Location</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.mapbox.com/mapbox.js/v3.2.0/mapbox.js'></script>
+	<link href='https://api.mapbox.com/mapbox.js/v3.2.0/mapbox.css' rel='stylesheet' />
+
+     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; height:400px; }
+    </style>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+</head>
+<body>
+	<div class="container">
+		<div class="row">
+			<div class="col-lg">
+				<div id='map'>
+				</div>
+			</div>
+			<div class="col-lg">
+				<h1>Proof of Location</h1>
+				<h4>Prototype track & trace on Hedera Hashgraph</h4>
+				<button onclick="getLocation()">Location</button> <!-- Button to get location from GPS cooridnates -->
+				<p id="demo"></p>
+				<button onclick="newlocation()">Place Marker</button> <!-- Place marker of cooridnates on map -->
+			</div>
+		</div>
+	</div>
+</body>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script>
+	var x = document.getElementById("demo");
+	var lon
+	var lat
+		function getLocation() {
+		  if (navigator.geolocation) { // Check if GPS is available in browser
+		    navigator.geolocation.getCurrentPosition(showPosition);
+		  } else {
+		    x.innerHTML = "Geolocation is not supported by this browser.";
+		  }
+		}
+
+		function showPosition(position) {
+		  x.innerHTML = "Latitude: " + position.coords.latitude + 
+		  "<br>Longitude: " + position.coords.longitude +
+		  "<br> Pushing location to server...";
+		  lon = position.coords.longitude; 
+		  lat = position.coords.latitude;
+		  $.ajax({
+		    	url: "http://localhost:8080/push-location-simple",
+				type: "POST",
+				dataType: "json",
+				contentType: "application/json",
+				data: JSON.stringify({
+					"longitude": lon,
+					"latitude": lat
+				}),
+				success: function(result) {
+					x.innerHTML = "Push successfully!"
+				},
+				error: function(err) {
+					if (err.statusCode !== 200) {
+						x.innerHTML = "Something's wrong on server"
+					} else {
+						x.innerHTML = "Push successfully!"
+					}
+				}
+		    })
+		}
+	L.mapbox.accessToken = 'insert own mapboxkey';
+
+	var map = L.mapbox.map('map')
+	    .setView([38.91338, -77.03236], 1)
+	    .addLayer(L.mapbox.styleLayer('mapbox://styles/mapbox/streets-v11'));
+
+	L.mapbox.featureLayer({
+	    // this feature is in the GeoJSON format: see geojson.org
+	    // for the full specification
+	    type: 'Feature',
+	    geometry: {
+	        type: 'Point',
+	        // coordinates here are in longitude, latitude order because
+	        // x, y is the standard for GeoJSON and many formats
+	        coordinates: [
+	          -77.03221142292,
+	          38.913371603574
+	        ]
+	    },
+	    properties: {
+	        title: 'Peregrine Espresso',
+	        description: '1718 14th St NW, Washington, DC',
+	        // one can customize markers by adding simplestyle properties
+	        // https://www.mapbox.com/guides/an-open-platform/#simplestyle
+	        'marker-size': 'large',
+	        'marker-color': '#BE9A6B',
+	        'marker-symbol': 'cafe'
+	    }
+	}).addTo(map);
+
+	function newlocation(){
+		x.innerHTML = "Getting your previous location..."
+		$.ajax({
+			url: "http://localhost:8080/get-location-simple",
+			type: "POST",
+			dataType: "json",
+			contentType: "application/json",
+			success: function(result) {
+				x.innerHTML = "Got your previous location" +
+				"<br> Longitude: " + result.longitude +
+				"<br> Latitude: " + result.latitude
+				L.mapbox.featureLayer({
+					// this feature is in the GeoJSON format: see geojson.org
+					// for the full specification
+					type: 'Feature',
+					geometry: {
+						type: 'Point',
+						// coordinates here are in longitude, latitude order because
+						// x, y is the standard for GeoJSON and many formats
+						coordinates: [
+						  Number(result.longitude),
+						  Number(result.latitude)
+						]
+					},
+					properties: {
+						title: 'New Location',
+						description: 'Your Location',
+						// one can customize markers by adding simplestyle properties
+						// https://www.mapbox.com/guides/an-open-platform/#simplestyle
+						'marker-size': 'large',
+						'marker-color': '#BE9A6B',
+						'marker-symbol': 'cafe'
+					}
+				}).addTo(map);
+			},
+			error: function(err) {console.error("error", err)}
+		})
+
+	};
+</script>
+</html>
