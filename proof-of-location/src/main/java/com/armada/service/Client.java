@@ -121,14 +121,14 @@ public class Client {
         Key publicKey = this.operatorKey.getPublicKey();
 
         FileCreateTransaction fileTx = new FileCreateTransaction(this.hederaClient)
-                .setExpirationTime(Instant.now().plus(Duration.ofSeconds(3600)))
+                .setExpirationTime(Instant.now().plus(Duration.ofDays(90)))
                 .addKey(publicKey)
                 .setContents(jsonData.getAsJsonPrimitive("object").getAsString().getBytes());
         TransactionReceipt fileReceipt = fileTx.executeForReceipt();
         FileId newFileId = fileReceipt.getFileId();
 
         ContractCreateTransaction contractTx = new ContractCreateTransaction(hederaClient)
-                .setAutoRenewPeriod(Duration.ofHours(1))
+                .setAutoRenewPeriod(Duration.ofDays(90))
                 .setGas(this.gas)
                 .setBytecodeFile(newFileId)
                 .setAdminKey(publicKey);
